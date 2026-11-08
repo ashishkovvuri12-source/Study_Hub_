@@ -231,7 +231,7 @@
 
   // Fetch real-time metrics and registered users from MongoDB backend
   const token = localStorage.getItem('studyhub_token');
-  const API_URL = (window.location.port === '5000' || window.location.port === '5173') ? '/api' : 'http://localhost:5000/api';
+  const API_URL = window.location.protocol === 'file:' ? 'http://localhost:5000/api' : '/api';
 
   if (token) {
     fetch(`${API_URL}/admin/stats`, {

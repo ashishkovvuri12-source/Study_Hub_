@@ -106,7 +106,7 @@
   }
 
   // Update counts from MongoDB backend if running
-  const API_URL = (window.location.port === '5000' || window.location.port === '5173') ? '/api' : 'http://localhost:5000/api';
+  const API_URL = window.location.protocol === 'file:' ? 'http://localhost:5000/api' : '/api';
   fetch(`${API_URL}/materials`)
     .then(r => r.json())
     .then(res => {

@@ -119,9 +119,7 @@
 
   let currentRole = 'student';
   let authMode = 'signin'; // 'signin' or 'signup'
-  const API_URL = (window.location.port === '5000' || window.location.port === '5173')
-    ? '/api'
-    : 'http://localhost:5000/api';
+  const API_URL = window.location.protocol === 'file:' ? 'http://localhost:5000/api' : '/api';
 
   function setAuthMode(mode) {
     authMode = mode;

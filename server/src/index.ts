@@ -1,7 +1,8 @@
-import express from 'express';
+import express, { Request, Response, NextFunction } from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
 import path from 'path';
+import fs from 'fs';
 
 // Load environment variables
 dotenv.config({ path: path.resolve(__dirname, '../../.env') });
@@ -19,8 +20,8 @@ const PORT = process.env.PORT || 5000;
 
 // Connect to MongoDB & optionally auto-seed
 connectDB().then(() => {
-  seedDatabase(false).catch((err) => {
-    console.warn('[Seed] Auto-seed warning:', err.message);
+  seedDatabase(false).catch((err: any) => {
+    console.warn('[Seed] Auto-seed warning:', err?.message || err);
   });
 });
 
@@ -30,7 +31,7 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 // API Status
-app.get('/api/health', (_req, res) => {
+app.get('/api/health', (_req: Request, res: Response) => {
   res.json({
     status: 'ok',
     message: 'StudyHub Backend API is running smoothly',
@@ -54,29 +55,38 @@ app.use(express.static(rootStaticPath));
 
 // SPA catch-all for React Router:
 // If a request is not an API call and not a static file, serve index.html
-app.get('*', (req, res, next) => {
+app.use((req: Request, res: Response, next: NextFunction): void => {
   if (req.path.startsWith('/api')) {
-    return next();
+    next();
+    return;
   }
-  const fs = require('fs');
   const clientIndex = path.join(clientDistPath, 'index.html');
   if (fs.existsSync(clientIndex)) {
-    return res.sendFile(clientIndex);
+    res.sendFile(clientIndex);
+    return;
   }
-  // Otherwise serve root index.html
-  res.sendFile(path.join(rootStaticPath, 'index.html'));
+  // Otherwise serve root index.html if it exists
+  const rootIndex = path.join(rootStaticPath, 'index.html');
+  if (fs.existsSync(rootIndex)) {
+    res.sendFile(rootIndex);
+    return;
+  }
+  res.status(404).send('Not Found');
 });
 
 // Error handling middleware
 app.use(errorHandler);
 
-app.listen(PORT, () => {
-  console.log(`===============================================`);
-  console.log(`🚀 StudyHub Backend running on port ${PORT}`);
-  console.log(`👉 API Base URL: http://localhost:${PORT}/api`);
-  console.log(`👉 Web Interface: http://localhost:${PORT}`);
-  console.log(`===============================================`);
-});
+// Start standalone HTTP listener only when not running in Vercel / serverless environment
+if (!process.env.VERCEL) {
+  app.listen(PORT, () => {
+    console.log(`===============================================`);
+    console.log(`🚀 StudyHub Backend running on port ${PORT}`);
+    console.log(`👉 API Base URL: http://localhost:${PORT}/api`);
+    console.log(`👉 Web Interface: http://localhost:${PORT}`);
+    console.log(`===============================================`);
+  });
+}
 
 export default app;
 
